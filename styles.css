@@ -1,0 +1,30 @@
+* {
+   margin: 0;
+   padding: 0;
+   line-height: 1rem;
+}
+
+body {
+   background-color: #0A0A0A;
+   color: snow;
+   margin: 0;
+   padding: 0;
+}
+
+#image-hole {
+   display:none;
+}
+
+p{
+   margin-top: 2rem;
+   text-align: center;
+}
+
+a{
+   color:snow;
+   text-decoration: none;
+}
+
+.end-of-search{
+   color: steelblue;
+}
