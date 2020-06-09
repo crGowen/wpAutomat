@@ -15,6 +15,8 @@ minH = 1080;
 subreddit = 'spacewallpapers';
 imageHandle = $id("image-hole");
 
+/* code was never intended to be anything major, but since all these changes have gone into it, a code refactor and ESnext update is in order (sometime) */
+
 function HttpGet() {  
     if (!xhr) {
         console.error("request not instantiated!");
@@ -72,8 +74,12 @@ function Download(inUrl) {
 
 function ParseRank(){
     if (ranks.length<1) {
-        $id("output-console").innerHTML += "<p class='end-of-search'>All entries in this subreddit have been checked. End of operation.</p>";
-        console.log("All subreddit entries have been checked. End of operation.");
+        if (currrentSub < subreddits.length) {
+            RunSearch();
+        } else {
+            $id("output-console").innerHTML += "<p class='end-of-search'>All entries have been checked. End of operation.</p>";
+            console.log("All entries have been checked. End of operation.");
+        }        
         return;
     }
     if (j<ranks.length) {
@@ -118,18 +124,22 @@ function EvalPic(k, evalFromDl){
     }, 800);
 }
 
-function RunImageGather(inputStr, x, y) {
-    subreddit = inputStr;
-    url = 'https://old.reddit.com/r/' + subreddit + '/top';
-    
-    minW = x;
-    minH = y;
+function RunSearch() {
+    url = 'https://old.reddit.com/r/' + subreddits[currrentSub] + '/top';
 
     pos = "0";
     countMult=0;
-    $id("output-console").innerHTML = "";
-
+    currrentSub++;
     HttpGet();
 }
 
-window.alert('open the developer console (usually F12), enter the command RunImageGather([subreddit], [width], [height]) -- eg: RunImageGather("spacewallpapers", 1920, 1080), then close the developer window AND this message box; the webpage will fill with links to images that can be (cropped and) used as a desktop wallpaper. Note that in subreddits that typically do not have hi-res images, this can take time.');
+function RunImageGather(x, y, ...inputGroup) {
+    subreddits = inputGroup;
+    currrentSub = 0;
+    minW = x;
+    minH = y;
+    $id("output-console").innerHTML = "";
+    RunSearch();
+}
+
+window.alert('open the developer console (usually F12), enter the command RunImageGather([width], [height], [subreddits - any quantity - comma seperated]) -- eg: RunImageGather(1920, 1080, "spacewallpapers", "spacepics"), then close the developer window AND this message box; the webpage will fill with links to images that can be (cropped and) used as a desktop wallpaper. Note that in subreddits that typically do not have hi-res images, this can take time.');
