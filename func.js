@@ -1,145 +1,161 @@
-parser = new DOMParser();
-ranks = false;
-j=0;
-outputLocID = "output-console";
-postName = "";
-imageW = "";
-imageH = "";
-pos = "0";
-countMult=0;
-DlRefreshcounter=0;
-xhr = new XMLHttpRequest();
+class WallpaperAutomat {
+    static init() {
+        WallpaperAutomat.parser = new DOMParser();
+        WallpaperAutomat.ranks = null;
+        WallpaperAutomat.j = 0;
+        WallpaperAutomat.outputLoc = document.getElementById("output-console");
+        WallpaperAutomat.imageW = 0;
+        WallpaperAutomat.imageH = 0;
+        WallpaperAutomat.dlRefreshcounter = 0;
+        WallpaperAutomat.xhr = new XMLHttpRequest();
 
-minW = 1920;
-minH = 1080;
-subreddit = 'spacewallpapers';
-imageHandle = $id("image-hole");
+        WallpaperAutomat.minW = 0;
+        WallpaperAutomat.minH = 0;
+        WallpaperAutomat.subreddits = null;
 
-/* code was never intended to be anything major, but since all these changes have gone into it, a code refactor and ESnext update is in order (sometime) */
+        WallpaperAutomat.currentSubIndex = 0;
+        WallpaperAutomat.imageHandle = document.getElementById("image-hole");
 
-function HttpGet() {  
-    if (!xhr) {
-        console.error("request not instantiated!");
-        return;
+        WallpaperAutomat.url = "";
+        WallpaperAutomat.pos = 0;
+        WallpaperAutomat.countMult = 0; 
+        WallpaperAutomat.postName = "";
+        WallpaperAutomat.outp = "";
+        WallpaperAutomat.loadTimeout = null;
     }
 
-    param = "inputURL=" + url + "&countMult=" + countMult + "&pos=" + pos + "&dlImg=0";
+    static checkImage() {
+        WallpaperAutomat.download();
+        WallpaperAutomat.waiting = true;
+        
+        WallpaperAutomat.imageHandle.onload = () => {
+            clearTimeout(WallpaperAutomat.loadTimeout);
+            setTimeout(() => {
+                WallpaperAutomat.imageH = WallpaperAutomat.imageHandle.height;
+                WallpaperAutomat.imageW = WallpaperAutomat.imageHandle.width;
+                if(WallpaperAutomat.imageW>=WallpaperAutomat.minW && WallpaperAutomat.imageH>=WallpaperAutomat.minH)
+                    WallpaperAutomat.outputLoc.innerHTML += "<p><a href=" + WallpaperAutomat.outp + " target='_blank' rel='noopener noreferrer'>" + WallpaperAutomat.postName + " [" + WallpaperAutomat.imageW + ":" + WallpaperAutomat.imageH  + "]</a></p>";
+                WallpaperAutomat.j++;
+                WallpaperAutomat.parseRank();
+            }, 100);            
+        };
 
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState == 4) {
-            if (xhr.status!=200) {
-                console.error("request status = " + xhr.status);
-            } else {
-                htmlDoc = parser.parseFromString(xhr.responseText, "text/html");             
-                ranks = htmlDoc.getElementsByClassName("rank");
-                ParseRank();
-            }
-            
+        WallpaperAutomat.imageHandle.src = "output." + WallpaperAutomat.outp.substring(WallpaperAutomat.outp.length-3, WallpaperAutomat.outp.length) + "?dlrefresh=" + WallpaperAutomat.dlRefreshcounter;
+        WallpaperAutomat.dlRefreshcounter++;
+
+        WallpaperAutomat.loadTimeout = setTimeout(() => {
+            WallpaperAutomat.imageHandle.onload = null;
+            WallpaperAutomat.j++;
+            WallpaperAutomat.parseRank();
+        }, 30000);
+    }
+
+    static download() {
+        if (!WallpaperAutomat.xhr) {
+            console.error("HTTP request not instantiated!");
+            return;
         }
-    }
 
-    xhr.open("POST", "trawl-func.php", true);
+        var param = "inputURL=" + WallpaperAutomat.outp + "&countMult=0&pos=0&dlImg=1";
 
-    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-    xhr.send(param);
-}
-
-function Download(inUrl) {
-    //imageHandle.src = "";
-    if (!xhr) {
-        console.error("requestDL not instantiated!");
-        return;
-    }
-
-    param = "inputURL=" + inUrl + "&countMult=0&pos=0&dlImg=1";
-
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState == 4) {
-            if (xhr.status!=200) {
-                console.error("requestDL status = " + xhr.status);
-            } else {
-                setTimeout(()=>{EvalPic(outp, true);}, 600);             
+        WallpaperAutomat.xhr.onreadystatechange = () => {
+            if (WallpaperAutomat.xhr.readyState == 4) {
+                if (WallpaperAutomat.xhr.status!=200) {
+                    console.error("requestDL status = " + WallpaperAutomat.xhr.status);
+                    return false;
+                } else {
+                    return true;
+                }                
             }
-            
         }
+
+        WallpaperAutomat.xhr.open("POST", "trawl-func.php", true);
+
+        WallpaperAutomat.xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+        WallpaperAutomat.xhr.send(param);
+
     }
 
-    xhr.open("POST", "trawl-func.php", true);
+    static httpGet() {
+        if (!WallpaperAutomat.xhr) {
+            console.error("HTTP request not instantiated!");
+            return;
+        }
+    
+        var param = "inputURL=" + WallpaperAutomat.url + "&countMult=" + WallpaperAutomat.countMult + "&pos=" + WallpaperAutomat.pos + "&dlImg=0";
+    
+        WallpaperAutomat.xhr.onreadystatechange = () => {
+            if (WallpaperAutomat.xhr.readyState == 4) {
+                if (WallpaperAutomat.xhr.status!=200) {
+                    console.error("Request status = " + WallpaperAutomat.xhr.status);
+                    return;
+                } else {
+                    let htmlDoc = WallpaperAutomat.parser.parseFromString(WallpaperAutomat.xhr.responseText, "text/html");
+                    WallpaperAutomat.ranks = htmlDoc.getElementsByClassName("rank");
+                    WallpaperAutomat.parseRank();
+                }
+                
+            }
+        }
+    
+        WallpaperAutomat.xhr.open("POST", "trawl-func.php", true);
+    
+        WallpaperAutomat.xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    
+        WallpaperAutomat.xhr.send(param);
+    }
 
-    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-    xhr.send(param);
-}
-
-function ParseRank(){
-    if (ranks.length<1) {
-        if (currrentSub < subreddits.length) {
-            RunSearch();
-        } else {
-            $id("output-console").innerHTML += "<p class='end-of-search'>All entries have been checked. End of operation.</p>";
+    static parseRank() {
+        if (WallpaperAutomat.ranks.length<1) {
+            if (WallpaperAutomat.currentSubIndex < WallpaperAutomat.subreddits.length) {
+                WallpaperAutomat.runSearch();
+                return; // search required
+            }
+            WallpaperAutomat.outputLoc.innerHTML += "<p class='end-of-search'>All entries have been checked. End of operation.</p>";
             console.log("All entries have been checked. End of operation.");
-        }        
-        return;
-    }
-    if (j<ranks.length) {
-        pos = ranks[j].parentNode.id.substring(6, 15);
-        postName = ranks[j].parentNode.getElementsByClassName("title")[1].innerText;
-        console.log("Evaluating for target resolution: " + postName);
-        outp = ranks[j].parentNode.dataset.url;
-        if (!outp.includes("https://i.redd.it")) {
-            if (outp.substring(outp.length-3, outp.length)=="png" ||outp.substring(outp.length-3, outp.length)=="jpg") Download(outp);
-            else {
-                j++;
-                ParseRank();
-            }
-        } 
-        else {
-            if (outp.substring(outp.length-3, outp.length)=="png" ||outp.substring(outp.length-3, outp.length)=="jpg") EvalPic(outp, false);
-            else {
-                j++;
-                ParseRank();
-            }
+            return;     
         }
-    } else {
-        console.log("----------------------------------------------------------------");
-        j = 0;
-        countMult +=25;
-        HttpGet(url);        
-    }    
-}
-
-function EvalPic(k, evalFromDl){
-    if (!evalFromDl) imageHandle.src = k;
-    else {
-        imageHandle.src = "output." + k.substring(k.length-3, k.length) + "?dlrefresh=" + DlRefreshcounter;
-        DlRefreshcounter++;
+        if (WallpaperAutomat.j < WallpaperAutomat.ranks.length) {
+            WallpaperAutomat.pos = WallpaperAutomat.ranks[WallpaperAutomat.j].parentNode.id.substring(6, 15);
+            WallpaperAutomat.postName = WallpaperAutomat.ranks[WallpaperAutomat.j].parentNode.getElementsByClassName("title")[1].innerText;
+            console.log("Evaluating for target resolution: " + WallpaperAutomat.postName);
+            WallpaperAutomat.outp = WallpaperAutomat.ranks[WallpaperAutomat.j].parentNode.dataset.url;
+            if (WallpaperAutomat.outp.substring(WallpaperAutomat.outp.length-3, WallpaperAutomat.outp.length)=="png" || WallpaperAutomat.outp.substring(WallpaperAutomat.outp.length-3, WallpaperAutomat.outp.length)=="jpg")
+                WallpaperAutomat.checkImage()
+            else {
+                WallpaperAutomat.j++;
+                setTimeout(WallpaperAutomat.parseRank, 100);
+            }
+        } else {
+            console.log("----------------------------------------------------------------");
+            WallpaperAutomat.j = 0;
+            WallpaperAutomat.countMult +=25;
+            WallpaperAutomat.httpGet();
+            return;     
+        }
     }
-    setTimeout(()=>{
-        imageH = imageHandle.height;
-        imageW = imageHandle.width;
-        if(imageW>=minW && imageH>=minH) $id("output-console").innerHTML += "<p><a href=" + k + " target='_blank' rel='noopener noreferrer'>" + postName + " [" + imageW + ":" + imageH  + "]</a></p>";
-        j++;
-        ParseRank();
-    }, 800);
+
+    static runSearch() {
+        WallpaperAutomat.url = 'https://old.reddit.com/r/' + WallpaperAutomat.subreddits[WallpaperAutomat.currentSubIndex] + '/top';
+    
+        WallpaperAutomat.pos = "0";
+        WallpaperAutomat.countMult=0;
+        WallpaperAutomat.currentSubIndex++;
+        
+        WallpaperAutomat.httpGet();
+    }
+
+    static find(x, y, ...inputGroup) {
+        WallpaperAutomat.minW = x;
+        WallpaperAutomat.minH = y;
+        WallpaperAutomat.subreddits = inputGroup;
+
+        WallpaperAutomat.outputLoc.innerHTML = "";
+        
+        WallpaperAutomat.runSearch();
+    }
 }
 
-function RunSearch() {
-    url = 'https://old.reddit.com/r/' + subreddits[currrentSub] + '/top';
-
-    pos = "0";
-    countMult=0;
-    currrentSub++;
-    HttpGet();
-}
-
-function RunImageGather(x, y, ...inputGroup) {
-    subreddits = inputGroup;
-    currrentSub = 0;
-    minW = x;
-    minH = y;
-    $id("output-console").innerHTML = "";
-    RunSearch();
-}
-
-window.alert('open the developer console (usually F12), enter the command RunImageGather([width], [height], [subreddits - any quantity - comma seperated]) -- eg: RunImageGather(1920, 1080, "spacewallpapers", "spacepics"), then close the developer window AND this message box; the webpage will fill with links to images that can be (cropped and) used as a desktop wallpaper. Note that in subreddits that typically do not have hi-res images, this can take time.');
+WallpaperAutomat.init();
+window.alert('open the developer console (usually F12), enter the command WallpaperAutomat.find([width], [height], [subreddits - any quantity - comma seperated]) -- eg: WallpaperAutomat.find(1920, 1080, "spacewallpapers", "spacepics"), then close the developer window AND this message box; the webpage will fill with links to images that can be (cropped and) used as a desktop wallpaper. Note that in subreddits that typically do not have hi-res images, this can take time.');
