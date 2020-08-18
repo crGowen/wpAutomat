@@ -37,8 +37,10 @@ class WallpaperAutomat {
                 WallpaperAutomat.imageH = WallpaperAutomat.imageHandle.height;
                 WallpaperAutomat.imageW = WallpaperAutomat.imageHandle.width;
                 if(WallpaperAutomat.imageW>=WallpaperAutomat.minW && WallpaperAutomat.imageH>=WallpaperAutomat.minH) {
-                    if (!WallpaperAutomat.checkDomain()) htmlStr = "<p><a class='unknownDomain' title='Uncommon URL, be wary of clicking!' href=";
-                    WallpaperAutomat.outputLoc.innerHTML += htmlStr + WallpaperAutomat.outp + " target='_blank' rel='noopener noreferrer'>" + WallpaperAutomat.postName + " [" + WallpaperAutomat.imageW + ":" + WallpaperAutomat.imageH  + "]</a></p>";
+                    if (WallpaperAutomat.checkDomain()) htmlStr = "<p><a href=" + WallpaperAutomat.outp + " target='_blank' rel='noopener noreferrer'>" + WallpaperAutomat.postName + " [" + WallpaperAutomat.imageW + ":" + WallpaperAutomat.imageH  + "]</a></p>";
+                    else htmlStr = "<p><a class='unknownDomain' href=" + WallpaperAutomat.outp + " target='_blank' rel='noopener noreferrer'>+++ UNKNOWN WEBSITE - BE WARY OF CLICKING! +++ " + WallpaperAutomat.postName + " [" + WallpaperAutomat.imageW + ":" + WallpaperAutomat.imageH  + "]</a></p>";
+                    
+                    WallpaperAutomat.outputLoc.innerHTML += htmlStr ;
                 }
                     
                 WallpaperAutomat.j++;
