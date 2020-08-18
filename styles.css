@@ -25,6 +25,10 @@ a{
    text-decoration: none;
 }
 
+.unknownDomain {
+   color: orange;
+}
+
 .end-of-search{
    color: steelblue;
 }

@@ -22,9 +22,12 @@ class WallpaperAutomat {
         WallpaperAutomat.postName = "";
         WallpaperAutomat.outp = "";
         WallpaperAutomat.loadTimeout = null;
+
+        WallpaperAutomat.trustedDomains = ["i.redd.it", "i.imgur.com"];
     }
 
     static checkImage() {
+        var htmlStr = "<p><a href=";
         WallpaperAutomat.download();
         WallpaperAutomat.waiting = true;
         
@@ -33,8 +36,11 @@ class WallpaperAutomat {
             setTimeout(() => {
                 WallpaperAutomat.imageH = WallpaperAutomat.imageHandle.height;
                 WallpaperAutomat.imageW = WallpaperAutomat.imageHandle.width;
-                if(WallpaperAutomat.imageW>=WallpaperAutomat.minW && WallpaperAutomat.imageH>=WallpaperAutomat.minH)
-                    WallpaperAutomat.outputLoc.innerHTML += "<p><a href=" + WallpaperAutomat.outp + " target='_blank' rel='noopener noreferrer'>" + WallpaperAutomat.postName + " [" + WallpaperAutomat.imageW + ":" + WallpaperAutomat.imageH  + "]</a></p>";
+                if(WallpaperAutomat.imageW>=WallpaperAutomat.minW && WallpaperAutomat.imageH>=WallpaperAutomat.minH) {
+                    if (!WallpaperAutomat.checkDomain()) htmlStr = "<p><a class='unknownDomain' title='Uncommon URL, be wary of clicking!' href=";
+                    WallpaperAutomat.outputLoc.innerHTML += htmlStr + WallpaperAutomat.outp + " target='_blank' rel='noopener noreferrer'>" + WallpaperAutomat.postName + " [" + WallpaperAutomat.imageW + ":" + WallpaperAutomat.imageH  + "]</a></p>";
+                }
+                    
                 WallpaperAutomat.j++;
                 WallpaperAutomat.parseRank();
             }, 100);            
@@ -150,10 +156,21 @@ class WallpaperAutomat {
         WallpaperAutomat.minW = x;
         WallpaperAutomat.minH = y;
         WallpaperAutomat.subreddits = inputGroup;
+        WallpaperAutomat.currentSubIndex = 0;
 
         WallpaperAutomat.outputLoc.innerHTML = "";
         
         WallpaperAutomat.runSearch();
+    }
+
+    static checkDomain() {
+        let urlOffset = 7;
+        if (WallpaperAutomat.outp[4].toLowerCase() == 's') urlOffset = 8;
+        for (let i = 0; i < WallpaperAutomat.trustedDomains.length; i++) {
+            if (WallpaperAutomat.trustedDomains[i].length < WallpaperAutomat.outp.length)
+                if (WallpaperAutomat.outp.substring(urlOffset, WallpaperAutomat.trustedDomains[i].length + urlOffset).toLowerCase() == WallpaperAutomat.trustedDomains[i]) return true;
+        }
+        return false;
     }
 }
 
